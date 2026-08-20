@@ -105,3 +105,40 @@ with tab5:
             st.success("🔼 **คำทำนาย:** ค่าเงินมีแนวโน้มปรับตัว **สูงขึ้น (Up Trend)**")
         else:
             st.error("🔽 **คำทำนาย:** ค่าเงินมีแนวโน้มปรับตัว **ลดลง (Down Trend)**")
+
+            # --- ข้อ 5. Streamlit Application (5 คะแนน) ---
+with tab5:
+    st.header("5. แอปพลิเคชันพยากรณ์ (ใช้งานจริง)")
+    try:
+        model = joblib.load('currency_model.pkl')
+    except FileNotFoundError:
+        st.error("⚠️ ไม่พบไฟล์ 'currency_model.pkl' ในระบบ")
+        st.stop()
+
+    # --- ส่วนที่เพิ่มใหม่: อธิบายรายละเอียดสกุลเงิน ---
+    st.markdown("""
+    **📌 ข้อมูลคู่สกุลเงินที่ใช้ในการทำนาย (Currency Pair):**
+    * 🇹🇭 **สกุลเงินหลัก:** บาท (THB - Thai Baht) / ประเทศไทย
+    * 🇪🇺 **สกุลเงินอ้างอิง:** ยูโร (EUR - Euro) / สหภาพยุโรป
+    > *หมายเหตุ: ระบบกำลังประเมินว่าพรุ่งนี้ 1 ยูโร จะแลกเป็นเงินบาทไทยได้แพงขึ้นหรือถูกลง*
+    """)
+    st.markdown("---")
+
+    st.info("กรอกอัตราแลกเปลี่ยนปัจจุบันลงในช่องด้านล่าง เพื่อให้ AI วิเคราะห์ทิศทาง")
+    
+    # ปรับข้อความ Label ให้ชัดเจนขึ้น
+    c1, c2 = st.columns(2)
+    with c1:
+        current_val = st.number_input("อัตราแลกเปลี่ยนวันนี้ (บาท ต่อ 1 ยูโร)", min_value=0.0, value=38.5000, format="%.4f")
+    with c2:
+        ma_val = st.number_input("ค่าเฉลี่ย 7 วันย้อนหลัง (MA_7)", min_value=0.0, value=38.4500, format="%.4f")
+
+    if st.button("🚀 ประมวลผลทำนายแนวโน้ม", type="primary"):
+        features = np.array([[current_val, ma_val]])
+        prediction = model.predict(features)[0]
+        
+        st.markdown("---")
+        if prediction == 1:
+            st.success("🔼 **คำทำนาย:** เงินบาทมีแนวโน้มอ่อนค่าลง (ใช้เงินบาทเยอะขึ้น เพื่อแลก 1 ยูโร - Up Trend)")
+        else:
+            st.error("🔽 **คำทำนาย:** เงินบาทมีแนวโน้มแข็งค่าขึ้น (ใช้เงินบาทน้อยลง เพื่อแลก 1 ยูโร - Down Trend)")
