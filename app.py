@@ -88,30 +88,44 @@ with tab5:
         st.error("⚠️ ไม่พบไฟล์ 'currency_model.pkl' ในระบบ")
         st.stop()
 
-    # --- ส่วนที่เพิ่มใหม่: อธิบายรายละเอียดสกุลเงิน ---
-    st.markdown("""
+    # 1. สร้าง Dropdown ให้เลือกสกุลเงิน
+    st.subheader("⚙️ ตั้งค่าสกุลเงินที่ต้องการทำนาย")
+    currency_choice = st.selectbox(
+        "เลือกระบบสกุลเงิน (เทียบกับ 1 ยูโร):",
+        [
+            "THB - บาท (ประเทศไทย)", 
+            "USD - ดอลลาร์ (สหรัฐอเมริกา)", 
+            "JPY - เยน (ญี่ปุ่น)", 
+            "GBP - ปอนด์ (สหราชอาณาจักร)"
+        ]
+    )
+    
+    # 2. ดึงตัวย่อสกุลเงิน (เช่น THB, USD) ออกมาเพื่อใช้แสดงผล
+    curr_code = currency_choice.split(" - ")[0]
+
+    st.markdown(f"""
     **📌 ข้อมูลคู่สกุลเงินที่ใช้ในการทำนาย (Currency Pair):**
-    * 🇹🇭 **สกุลเงินหลัก:** บาท (THB - Thai Baht) / ประเทศไทย
+    * 🏳️ **สกุลเงินหลัก:** {currency_choice}
     * 🇪🇺 **สกุลเงินอ้างอิง:** ยูโร (EUR - Euro) / สหภาพยุโรป
-    > *หมายเหตุ: ระบบกำลังประเมินว่าพรุ่งนี้ 1 ยูโร จะแลกเป็นเงินบาทไทยได้แพงขึ้นหรือถูกลง*
+    > *หมายเหตุ: โมเดล AI (Random Forest) ชุดนี้ ถูกปรับจูนมาสำหรับค่าเงิน THB เป็นหลัก การทำนายสกุลเงินอื่นอาจใช้เพื่อดูทิศทางเบื้องต้นเท่านั้น*
     """)
     st.markdown("---")
 
-    st.info("กรอกอัตราแลกเปลี่ยนปัจจุบันลงในช่องด้านล่าง เพื่อให้ AI วิเคราะห์ทิศทาง")
+    st.info(f"กรอกอัตราแลกเปลี่ยนปัจจุบันลงในช่องด้านล่าง เพื่อให้ AI วิเคราะห์ทิศทางของเงิน {curr_code}")
     
-    # ปรับข้อความ Label ให้ชัดเจนขึ้น
+    # 3. นำตัวแปร curr_code ไปแทรกใน Label เพื่อเปลี่ยนชื่อหน่วยเงินอัตโนมัติ
     c1, c2 = st.columns(2)
     with c1:
-        current_val = st.number_input("อัตราแลกเปลี่ยนวันนี้ (บาท ต่อ 1 ยูโร)", min_value=0.0, value=38.5000, format="%.4f")
+        current_val = st.number_input(f"อัตราแลกเปลี่ยนวันนี้ ({curr_code} ต่อ 1 ยูโร)", min_value=0.0, value=38.5000, format="%.4f", key="input_current")
     with c2:
-        ma_val = st.number_input("ค่าเฉลี่ย 7 วันย้อนหลัง (MA_7)", min_value=0.0, value=38.4500, format="%.4f")
+        ma_val = st.number_input(f"ค่าเฉลี่ย 7 วันย้อนหลัง (MA_7)", min_value=0.0, value=38.4500, format="%.4f", key="input_ma7")
 
-    if st.button("🚀 ประมวลผลทำนายแนวโน้ม", type="primary"):
+    if st.button("🚀 ประมวลผลทำนายแนวโน้ม", type="primary", key="predict_btn"):
         features = np.array([[current_val, ma_val]])
         prediction = model.predict(features)[0]
         
         st.markdown("---")
         if prediction == 1:
-            st.success("🔼 **คำทำนาย:** เงินบาทมีแนวโน้มอ่อนค่าลง (ใช้เงินบาทเยอะขึ้น เพื่อแลก 1 ยูโร - Up Trend)")
+            st.success(f"🔼 **คำทำนาย:** เงิน {curr_code} มีแนวโน้มอ่อนค่าลง (ต้องใช้เงิน {curr_code} เยอะขึ้น เพื่อแลก 1 ยูโร - Up Trend)")
         else:
-            st.error("🔽 **คำทำนาย:** เงินบาทมีแนวโน้มแข็งค่าขึ้น (ใช้เงินบาทน้อยลง เพื่อแลก 1 ยูโร - Down Trend)")
+            st.error(f"🔽 **คำทำนาย:** เงิน {curr_code} มีแนวโน้มแข็งค่าขึ้น (ใช้เงิน {curr_code} น้อยลง เพื่อแลก 1 ยูโร - Down Trend)")
