@@ -88,44 +88,55 @@ with tab5:
         st.error("⚠️ ไม่พบไฟล์ 'currency_model.pkl' ในระบบ")
         st.stop()
 
-    # 1. สร้าง Dropdown ให้เลือกสกุลเงิน
     st.subheader("⚙️ ตั้งค่าสกุลเงินที่ต้องการทำนาย")
-    currency_choice = st.selectbox(
-        "เลือกระบบสกุลเงิน (เทียบกับ 1 ยูโร):",
-        [
-            "THB - บาท (ประเทศไทย)", 
-            "USD - ดอลลาร์ (สหรัฐอเมริกา)", 
-            "JPY - เยน (ญี่ปุ่น)", 
-            "GBP - ปอนด์ (สหราชอาณาจักร)"
-        ]
-    )
     
-    # 2. ดึงตัวย่อสกุลเงิน (เช่น THB, USD) ออกมาเพื่อใช้แสดงผล
-    curr_code = currency_choice.split(" - ")[0]
+    # 1. สร้างตัวเลือกสกุลเงิน
+    currency_list = [
+        "THB - บาท (ประเทศไทย)", 
+        "EUR - ยูโร (สหภาพยุโรป)",
+        "USD - ดอลลาร์ (สหรัฐอเมริกา)", 
+        "JPY - เยน (ญี่ปุ่น)", 
+        "GBP - ปอนด์ (สหราชอาณาจักร)"
+    ]
+    
+    # 2. แบ่งหน้าจอเป็น 2 ฝั่งสำหรับ 2 Dropdown
+    col_sel1, col_sel2 = st.columns(2)
+    with col_sel1:
+        # index=0 หมายถึงให้ค่าเริ่มต้นตอนเปิดเว็บเป็น THB
+        base_choice = st.selectbox("เลือกสกุลเงินหลัก (Base Currency):", currency_list, index=0) 
+    with col_sel2:
+        # index=1 หมายถึงให้ค่าเริ่มต้นตอนเปิดเว็บเป็น EUR
+        ref_choice = st.selectbox("เลือกสกุลเงินอ้างอิง (Reference Currency):", currency_list, index=1)
+        
+    # 3. ดึงตัวย่อสกุลเงินออกมา (เช่น THB, EUR)
+    base_code = base_choice.split(" - ")[0]
+    ref_code = ref_choice.split(" - ")[0]
 
+    # แสดงรายละเอียดที่เลือก
     st.markdown(f"""
-    **📌 ข้อมูลคู่สกุลเงินที่ใช้ในการทำนาย (Currency Pair):**
-    * 🏳️ **สกุลเงินหลัก:** {currency_choice}
-    * 🇪🇺 **สกุลเงินอ้างอิง:** ยูโร (EUR - Euro) / สหภาพยุโรป
-    > *หมายเหตุ: โมเดล AI (Random Forest) ชุดนี้ ถูกปรับจูนมาสำหรับค่าเงิน THB เป็นหลัก การทำนายสกุลเงินอื่นอาจใช้เพื่อดูทิศทางเบื้องต้นเท่านั้น*
+    **📌 ข้อมูลคู่สกุลเงินที่ใช้ในการทำนาย (Currency Pair: {base_code}/{ref_code}):**
+    * 🏳️ **สกุลเงินหลัก:** {base_choice}
+    * 🏳️ **สกุลเงินอ้างอิง:** {ref_choice}
+    > *หมายเหตุ: โปรเจกต์นำร่องนี้ โมเดล AI ถูกเทรนมาด้วยข้อมูล {base_code} เทียบกับ EUR เป็นหลัก การทำนายคู่สกุลเงินอื่นบนหน้าเว็บนี้เป็นการสาธิตการทำงานของ User Interface เท่านั้น*
     """)
     st.markdown("---")
 
-    st.info(f"กรอกอัตราแลกเปลี่ยนปัจจุบันลงในช่องด้านล่าง เพื่อให้ AI วิเคราะห์ทิศทางของเงิน {curr_code}")
+    st.info(f"กรอกอัตราแลกเปลี่ยนปัจจุบันลงในช่องด้านล่าง เพื่อให้ AI วิเคราะห์ทิศทางของเงิน {base_code} เทียบกับ {ref_code}")
     
-    # 3. นำตัวแปร curr_code ไปแทรกใน Label เพื่อเปลี่ยนชื่อหน่วยเงินอัตโนมัติ
+    # 4. นำตัวย่อทั้ง 2 ตัวไปแทรกในช่องรับค่า
     c1, c2 = st.columns(2)
     with c1:
-        current_val = st.number_input(f"อัตราแลกเปลี่ยนวันนี้ ({curr_code} ต่อ 1 ยูโร)", min_value=0.0, value=38.5000, format="%.4f", key="input_current")
+        current_val = st.number_input(f"อัตราแลกเปลี่ยนวันนี้ ({base_code} ต่อ 1 {ref_code})", min_value=0.0, value=38.5000, format="%.4f", key="input_current")
     with c2:
         ma_val = st.number_input(f"ค่าเฉลี่ย 7 วันย้อนหลัง (MA_7)", min_value=0.0, value=38.4500, format="%.4f", key="input_ma7")
 
+    # 5. ปุ่มกดและผลลัพธ์
     if st.button("🚀 ประมวลผลทำนายแนวโน้ม", type="primary", key="predict_btn"):
         features = np.array([[current_val, ma_val]])
         prediction = model.predict(features)[0]
         
         st.markdown("---")
         if prediction == 1:
-            st.success(f"🔼 **คำทำนาย:** เงิน {curr_code} มีแนวโน้มอ่อนค่าลง (ต้องใช้เงิน {curr_code} เยอะขึ้น เพื่อแลก 1 ยูโร - Up Trend)")
+            st.success(f"🔼 **คำทำนาย:** เงิน {base_code} มีแนวโน้มอ่อนค่าลง (ต้องใช้เงิน {base_code} เยอะขึ้น เพื่อแลก 1 {ref_code} - Up Trend)")
         else:
-            st.error(f"🔽 **คำทำนาย:** เงิน {curr_code} มีแนวโน้มแข็งค่าขึ้น (ใช้เงิน {curr_code} น้อยลง เพื่อแลก 1 ยูโร - Down Trend)")
+            st.error(f"🔽 **คำทำนาย:** เงิน {base_code} มีแนวโน้มแข็งค่าขึ้น (ใช้เงิน {base_code} น้อยลง เพื่อแลก 1 {ref_code} - Down Trend)")
