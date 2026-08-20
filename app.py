@@ -117,9 +117,19 @@ with tab5:
     
     col_sel1, col_sel2 = st.columns(2)
     with col_sel1:
+        # ช่องซ้าย: แสดงสกุลเงินทั้งหมด (ค่าเริ่มต้นคือ THB)
         base_choice = st.selectbox("เลือกสกุลเงินหลัก (Base Currency):", currency_list, index=0) 
+        
     with col_sel2:
-        ref_choice = st.selectbox("เลือกสกุลเงินอ้างอิง (Reference Currency):", currency_list, index=1)
+        # ระบบกรอง (Filter): ตัดสกุลเงินที่ถูกเลือกในช่องซ้ายออกไปจากลิสต์ช่องขวา
+        filtered_currency_list = [c for c in currency_list if c != base_choice]
+        
+        # ตั้งค่าให้ช่องขวาพยายามเลือก EUR เป็นค่าเริ่มต้นเสมอ (แต่ถ้าช่องซ้ายเลือก EUR ไปแล้ว ให้สลับไปเป็น THB แทน)
+        default_ref = "EUR - ยูโร (สหภาพยุโรป)" if base_choice != "EUR - ยูโร (สหภาพยุโรป)" else "THB - บาท (ประเทศไทย)"
+        default_idx = filtered_currency_list.index(default_ref)
+        
+        # ช่องขวา: แสดงเฉพาะสกุลเงินที่เหลือ
+        ref_choice = st.selectbox("เลือกสกุลเงินอ้างอิง (Reference Currency):", filtered_currency_list, index=default_idx)
         
     base_code = base_choice.split(" - ")[0]
     ref_code = ref_choice.split(" - ")[0]
