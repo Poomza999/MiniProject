@@ -6,7 +6,7 @@ import numpy as np
 st.set_page_config(page_title="Currency Trend Predictor", page_icon="📈")
 st.title("📈 ระบบพยากรณ์แนวโน้มค่าเงินบาท (THB)")
 
-# 2. ฟังก์ชันโหลดโมเดล (ใช้ Cache เพื่อให้เว็บโหลดเร็วขึ้น)
+# 2. ฟังก์ชันโหลดโมเดล
 @st.cache_resource
 def load_model():
     return joblib.load('currency_model.pkl')
@@ -14,10 +14,10 @@ def load_model():
 try:
     model = load_model()
 except FileNotFoundError:
-    st.error("⚠️ ไม่พบไฟล์ 'currency_model.pkl' กรุณาตรวจสอบในโฟลเดอร์")
+    st.error("⚠️ ไม่พบไฟล์ 'currency_model.pkl' กรุณาตรวจสอบใน GitHub Repository")
     st.stop()
 
-# 3. สร้าง UI สำหรับรับค่า Input
+# 3. สร้าง UI รับค่า
 st.write("กรอกข้อมูลปัจจุบันเพื่อพยากรณ์แนวโน้มอัตราแลกเปลี่ยนในวันพรุ่งนี้")
 
 col1, col2 = st.columns(2)
@@ -26,9 +26,8 @@ with col1:
 with col2:
     ma_val = st.number_input("ค่าเฉลี่ย 7 วันย้อนหลัง (MA_7)", min_value=0.0, format="%.4f")
 
-# 4. ปุ่มประมวลผลและแสดงผลลัพธ์
+# 4. ประมวลผล
 if st.button("ประมวลผล (Predict)", type="primary"):
-    # แปลงข้อมูลให้อยู่ในรูปแบบ Array 2 มิติ สำหรับส่งให้โมเดล
     features = np.array([[current_val, ma_val]])
     prediction = model.predict(features)[0]
     
